@@ -33,6 +33,7 @@ name = "cargo-propagate-features"
 path = "src/main.rs"
 
 [dependencies]
+async-fs-io = "0.1.5"
 anyhow = "1.0.100"
 clap = { version = "4.5.53", default-features = false, features = [
     "derive",
@@ -42,13 +43,13 @@ clap = { version = "4.5.53", default-features = false, features = [
 serde = { version = "1", features = ["derive"] }
 toml_edit = "=0.24.0"
 cargo-plugin-utils = "0.0.8"
+tokio = { version = "1", features = ["fs", "io-util", "macros", "rt-multi-thread"] }
 
 [build-dependencies]
 cargo-version-info = "0.0.9"
 sloughi = "0.3"
 
 [dev-dependencies]
-tempfile = "3"
 
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }.{ archive-format }"
