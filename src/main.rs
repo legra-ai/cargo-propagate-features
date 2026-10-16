@@ -5,26 +5,14 @@
 //! this tool ensures that crate A's feature X includes "B/X" in its feature
 //! dependencies.
 
-use std::collections::{
-    HashMap,
-    HashSet,
-};
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
-    Result,
-};
-use async_fs_io::{
-    read_string_bounded,
-    write_bytes,
-};
+use anyhow::{Context, Result};
+use async_fs_io::{read_string_bounded, write_bytes};
 use cargo_plugin_utils::ProgressLogger;
 use clap::Parser;
-use toml_edit::{
-    DocumentMut,
-    Item,
-};
+use toml_edit::{DocumentMut, Item};
 
 #[derive(Parser, Debug)]
 #[command(
