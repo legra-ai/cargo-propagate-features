@@ -5,14 +5,26 @@
 //! this tool ensures that crate A's feature X includes "B/X" in its feature
 //! dependencies.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{
+    HashMap,
+    HashSet,
+};
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
-use async_fs_io::{read_string_bounded, write_bytes};
+use anyhow::{
+    Context,
+    Result,
+};
+use async_fs_io::{
+    read_string_bounded,
+    write_bytes,
+};
 use cargo_plugin_utils::ProgressLogger;
 use clap::Parser;
-use toml_edit::{DocumentMut, Item};
+use toml_edit::{
+    DocumentMut,
+    Item,
+};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -80,8 +92,9 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
     let mut logger = ProgressLogger::new(args.quiet);
 
     // Use cargo_metadata to get all workspace packages - no need to manually
-    // discover! Process all packages in the workspace (supports both single-package
-    // projects and workspace projects with packages in crates/ or elsewhere).
+    // discover! Process all packages in the workspace (supports both
+    // single-package projects and workspace projects with packages in
+    // crates/ or elsewhere).
     let packages = cargo_plugin_utils::get_workspace_packages(args.manifest_path.as_deref())
         .context("Failed to get cargo metadata. Make sure you're in a Cargo project or use --manifest-path.")?;
 
@@ -93,8 +106,9 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             // Extract features from cargo_metadata (already parsed!)
             let features: HashSet<String> = pkg.features.keys().cloned().collect();
 
-            // Extract workspace dependencies (any dependency that exists in the workspace)
-            // We'll filter to workspace packages later when we have the full set
+            // Extract workspace dependencies (any dependency that exists in the
+            // workspace) We'll filter to workspace packages later
+            // when we have the full set
             let dependencies: HashSet<String> = pkg
                 .dependencies
                 .iter()
@@ -184,7 +198,8 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
                             continue;
                         };
 
-                        // Only process workspace dependencies that are actually in the workspace
+                        // Only process workspace dependencies that are actually
+                        // in the workspace
                         let dep_name_str = dep_name.to_string();
                         if !dep_table.contains_key("workspace")
                             || !workspace_package_names.contains(&dep_name_str)
@@ -370,7 +385,8 @@ fn remove_hardcoded_features(
             continue;
         };
 
-        // Only process workspace dependencies that are actually in the workspace
+        // Only process workspace dependencies that are actually in the
+        // workspace
         let dep_name_str = dep_name.to_string();
         if !dep_table.contains_key("workspace")
             || !workspace_package_names.contains(&dep_name_str)
