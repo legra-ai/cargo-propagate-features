@@ -195,3 +195,22 @@ async fn installed_version_is_embedded_package_identity() {
         )
     );
 }
+
+#[tokio::test]
+async fn help_is_available_without_a_workspace() {
+    let directory = TempDir::create(env::temp_dir())
+        .await
+        .expect("empty directory");
+    let result = Command::new(env!("CARGO_BIN_EXE_cargo-propagate-features"))
+        .args(["propagate-features", "--help"])
+        .current_dir(directory.path())
+        .output()
+        .await
+        .expect("help");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(String::from_utf8_lossy(&result.stdout).contains("--check"));
+}
