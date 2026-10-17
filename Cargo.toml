@@ -33,7 +33,7 @@ clap = { version = "4.6.6", default-features = false, features = [
 ] }
 serde = { version = "1", features = ["derive"] }
 toml_edit = "=0.25.13"
-cargo-plugin-utils = "0.0.15"
+cargo-plugin-utils = "0.0.16"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
