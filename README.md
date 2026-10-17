@@ -119,3 +119,16 @@ Copyright © 2026 DataRoad Inc, Delaware, USA, trading as Legra.
 
 Licensed under either the [MIT license](LICENSE-MIT) or the
 [Apache License, Version 2.0](LICENSE-APACHE), at your option.
+
+## Nonmutating CI validation
+
+Use `cargo propagate-features --check --features web,backend` with the
+workspace's explicit feature policy. Exit 0 means clean; exit 1 means
+propagation changes are needed. Manifests are unchanged in check mode,
+including when only removal of hardcoded features is needed. Do not
+parse human-readable dry-run output to decide CI success.
+
+Renamed dependencies use their manifest alias. Optional dependencies
+receive `alias?/feature`, so propagation does not enable a dependency
+that was otherwise disabled. Existing explicit activation is retained.
+`--version` identifies the installed package.

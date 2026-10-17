@@ -14,19 +14,7 @@ keywords = ["cargo", "features", "workspace", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 publish = true
 
-exclude = [
-    ".cargo/",
-    ".cargo-husky/",
-    ".clippy.toml",
-    ".cursor/",
-    ".github/",
-    ".gitignore",
-    ".rust-toolchain.toml",
-    ".vscode/",
-    "cog.toml",
-    "rustfmt.toml",
-    "scripts/",
-]
+include = ["src/**", "tests/**", "build.rs", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE-MIT", "LICENSE-APACHE"]
 
 [[bin]]
 name = "cargo-propagate-features"
@@ -42,12 +30,11 @@ clap = { version = "4.6.6", default-features = false, features = [
 ] }
 serde = { version = "1", features = ["derive"] }
 toml_edit = "=0.25.13"
-cargo-plugin-utils = "0.0.12"
+cargo-plugin-utils = "0.0.15"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
-cargo-version-info = "0.0.21"
-rhusky = "0.0.6"
+rhusky = "1.0.2"
 
 [dev-dependencies]
 

@@ -6,8 +6,8 @@
 //! dependencies.
 
 use std::collections::{
-    HashMap,
-    HashSet,
+    BTreeMap,
+    BTreeSet,
 };
 use std::path::PathBuf;
 
@@ -28,9 +28,11 @@ use toml_edit::{
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "cargo-propagate-features",
+    name = "cargo",
     about = "Automatically propagate workspace crate features to dependencies",
-    bin_name = "cargo"
+    bin_name = "cargo-propagate-features",
+    version = env!("CARGO_PKG_VERSION"),
+    propagate_version = true
 )]
 struct Cli {
     #[command(subcommand)]
@@ -45,6 +47,11 @@ enum Command {
 
 #[derive(Parser, Debug)]
 struct PropagateArgs {
+    /// Exit 1 when propagation changes are required, without modifying
+    /// manifests.
+    #[arg(long, conflicts_with = "dry_run")]
+    check: bool,
+
     /// Show what would be changed without modifying files
     #[arg(long)]
     dry_run: bool,
@@ -69,8 +76,14 @@ struct PropagateArgs {
 struct CrateInfo {
     name: String,
     path: PathBuf,
-    features: HashSet<String>,
-    dependencies: HashSet<String>,
+    features: BTreeSet<String>,
+    dependencies: BTreeMap<String, DependencyInfo>,
+}
+
+#[derive(Debug, Clone)]
+struct DependencyInfo {
+    package: String,
+    optional: bool,
 }
 
 #[tokio::main]
@@ -83,11 +96,15 @@ async fn main() -> Result<()> {
 }
 
 async fn propagate_features(args: PropagateArgs) -> Result<()> {
-    let target_features: HashSet<String> = args
+    let target_features: BTreeSet<String> = args
         .features
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
+
+    if target_features.iter().any(String::is_empty) {
+        anyhow::bail!("Feature list must contain nonempty names");
+    }
 
     let mut logger = ProgressLogger::new(args.quiet);
 
@@ -103,14 +120,26 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             let manifest_dir = pkg.manifest_path.as_std_path().parent()?;
 
             // Extract features from cargo_metadata (already parsed!)
-            let features: HashSet<String> = pkg.features.keys().cloned().collect();
+            let features: BTreeSet<String> = pkg.features.keys().cloned().collect();
 
             // Extract workspace dependencies (any dependency that exists in the workspace)
             // We'll filter to workspace packages later when we have the full set
-            let dependencies: HashSet<String> = pkg
+            let dependencies = pkg
                 .dependencies
                 .iter()
-                .map(|dep| dep.name.as_str().to_string())
+                .map(|dependency| {
+                    let alias = dependency
+                        .rename
+                        .as_deref()
+                        .unwrap_or(dependency.name.as_str());
+                    (
+                        alias.to_owned(),
+                        DependencyInfo {
+                            package: dependency.name.as_str().to_owned(),
+                            optional: dependency.optional,
+                        },
+                    )
+                })
                 .collect();
 
             Some(CrateInfo {
@@ -123,7 +152,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
         .collect();
 
     // Build a set of workspace package names for efficient lookup
-    let workspace_package_names: HashSet<String> = packages
+    let workspace_package_names: BTreeSet<String> = packages
         .iter()
         .map(|p| p.name.as_str().to_string())
         .collect();
@@ -132,11 +161,11 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
     for crate_info in &mut crates {
         crate_info
             .dependencies
-            .retain(|dep_name| workspace_package_names.contains(dep_name));
+            .retain(|_, dependency| workspace_package_names.contains(&dependency.package));
     }
 
     // Build a map of crate name -> features
-    let crate_features: HashMap<String, HashSet<String>> = crates
+    let crate_features: BTreeMap<String, BTreeSet<String>> = crates
         .iter()
         .map(|c| (c.name.clone(), c.features.clone()))
         .collect();
@@ -160,6 +189,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             .context(format!("Failed to parse {:?}", cargo_toml_path))?;
 
         let mut changed = false;
+        let dependency_names = crate_info.dependencies.keys().cloned().collect();
 
         // Check regular dependencies
         changed |= remove_hardcoded_features(
@@ -167,7 +197,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             "dependencies",
             &target_features,
             &crate_info.name,
-            &workspace_package_names,
+            &dependency_names,
             &mut logger,
         )?;
 
@@ -177,7 +207,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             "dev-dependencies",
             &target_features,
             &crate_info.name,
-            &workspace_package_names,
+            &dependency_names,
             &mut logger,
         )?;
 
@@ -199,7 +229,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
                         // Only process workspace dependencies that are actually in the workspace
                         let dep_name_str = dep_name.to_string();
                         if !dep_table.contains_key("workspace")
-                            || !workspace_package_names.contains(&dep_name_str)
+                            || !dependency_names.contains(&dep_name_str)
                             || !dep_table.contains_key("features")
                         {
                             continue;
@@ -224,7 +254,6 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
                                 crate_info.name, dep_name, section_name
                             ));
                             changed = true;
-                            total_changes += 1;
 
                             // If features array is now empty, remove it
                             if features_array.is_empty() {
@@ -237,7 +266,8 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
         }
 
         if changed {
-            if args.dry_run {
+            total_changes += 1;
+            if args.dry_run || args.check {
                 logger.println(&format!("   [DRY RUN] Would update {:?}", cargo_toml_path));
             } else {
                 let output = doc.to_string();
@@ -285,9 +315,9 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
             let deps_with_feature: Vec<_> = crate_info
                 .dependencies
                 .iter()
-                .filter(|dep| {
+                .filter(|(_, dependency)| {
                     crate_features
-                        .get(*dep)
+                        .get(&dependency.package)
                         .map(|f| f.contains(*feature_name))
                         .unwrap_or(false)
                 })
@@ -309,14 +339,18 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
                 };
 
                 // Get existing feature dependencies
-                let mut existing: HashSet<String> = feature_array
+                let mut existing: BTreeSet<String> = feature_array
                     .iter()
                     .filter_map(|v| v.as_str().map(|s| s.to_string()))
                     .collect();
 
                 // Add missing feature dependencies
-                for dep in &deps_with_feature {
-                    let dep_feature = format!("{}/{}", dep, feature_name);
+                for (dep, dependency) in &deps_with_feature {
+                    let dep_feature = if dependency.optional {
+                        format!("{}?/{}", dep, feature_name)
+                    } else {
+                        format!("{}/{}", dep, feature_name)
+                    };
                     if !existing.contains(&dep_feature) {
                         logger.status(
                             "Adding",
@@ -332,7 +366,7 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
         }
 
         if changed {
-            if args.dry_run {
+            if args.dry_run || args.check {
                 logger.println(&format!("   [DRY RUN] Would update {:?}", cargo_toml_path));
             } else {
                 let output = doc.to_string();
@@ -349,9 +383,9 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
     if !args.quiet {
         if total_changes > 0 {
             logger.println("✨ Complete!");
-            if args.dry_run {
+            if args.dry_run || args.check {
                 logger.println(&format!("   Would make {} changes", total_changes));
-                logger.println("   Run without --dry-run to apply changes");
+                logger.println("   Run without --check or --dry-run to apply changes");
             } else {
                 logger.println(&format!("   Made {} changes", total_changes));
             }
@@ -360,15 +394,18 @@ async fn propagate_features(args: PropagateArgs) -> Result<()> {
         }
     }
 
+    if args.check && total_changes > 0 {
+        anyhow::bail!("Feature propagation changes are required");
+    }
     Ok(())
 }
 
 fn remove_hardcoded_features(
     doc: &mut DocumentMut,
     section: &str,
-    target_features: &HashSet<String>,
+    target_features: &BTreeSet<String>,
     crate_name: &str,
-    workspace_package_names: &HashSet<String>,
+    workspace_package_names: &BTreeSet<String>,
     logger: &mut ProgressLogger,
 ) -> Result<bool> {
     let mut changed = false;
