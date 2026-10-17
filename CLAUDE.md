@@ -58,13 +58,13 @@ cargo propagate-features [OPTIONS]
 cargo test
 
 # Format check (requires nightly)
-cargo +nightly fmt --all -- --check
+sh scripts/fmt.sh --check
 
 # Format code
-cargo +nightly fmt --all
+sh scripts/fmt.sh
 
 # Clippy (requires nightly)
-cargo +nightly clippy --all-targets --all-features -- -D warnings
+cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 ## Code Style
@@ -90,49 +90,19 @@ Key dependencies:
 - `clap`: CLI argument parsing with derive macros
 - `toml_edit`: Preserves TOML formatting during edits
 - `cargo_plugin_utils`: Workspace package discovery via cargo_metadata
-- `cargo-version-info`: Dynamic version computation in build.rs
+- Shared CI owns release preparation; binary identity is Cargo package metadata.
 
-## GitHub Actions Integration
+## Maintenance and publication
 
-The `dataroadinc/github-actions` repository provides a reusable action
-for installing this tool in CI workflows:
+`CI` is the only publisher. Its shared tested-revision pipeline prepares
+signed versions, tests actual archives on three platforms and builds
+six binary targets before publication. See `.github/PUBLISH.md`.
+Daily updates cover direct/transitive dependencies and security fixes.
 
-```yaml
-- name: Setup cargo-propagate-features
-  uses: dataroadinc/github-actions/.github/actions/setup-cargo-propagate-features@main
-  with:
-    version: "0.2.0"  # Optional, defaults to latest
-```
-
-The action:
-
-- Installs via cargo-binstall for fast binary downloads
-- Caches the binary by version, OS, and architecture
-- Adds `~/.cargo/bin` to PATH
-- Depends on `setup-cargo-binstall` (automatically invoked)
-
-Source: `../github-actions/.github/actions/setup-cargo-propagate-features/`
-
-## Version Management
-
-Use `cargo version-info bump` for version management. This command
-updates Cargo.toml and creates a commit, but does NOT create tags
-(tags are created by CI after tests pass).
-
-```bash
-cargo version-info bump --patch   # 0.0.1 -> 0.0.2
-cargo version-info bump --minor   # 0.1.0 -> 0.2.0
-cargo version-info bump --major   # 1.0.0 -> 2.0.0
-```
-
-**Do NOT use `cog bump`** - it creates local tags which conflict
-with CI's tag creation workflow.
-
-**Workflow:**
-
-1. Create PR with version bump commit
-2. Merge PR to main
-3. CI detects version change, creates tag, publishes release
+Use `cargo propagate-features --check --features <explicit-list>` in CI.
+It returns 1 for drift without rewriting manifests. Dry-run is a preview,
+not a CI predicate. Optional dependencies use weak feature forwarding,
+and renamed dependencies are addressed by their manifest alias.
 
 ## Git workflow
 

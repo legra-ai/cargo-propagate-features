@@ -1,36 +1,34 @@
 version: 2
 updates:
-  - package-ecosystem: "cargo"
+  - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "sunday"
-      time: "22:00"
-      timezone: "UTC"
+      interval: daily
+    allow:
+      - dependency-type: all
     groups:
-      all-dependencies:
-        patterns:
-          - "*"
+      compatible-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
     commit-message:
       prefix: "build(deps)"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "rust"
-  - package-ecosystem: "github-actions"
+    open-pull-requests-limit: 10
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "sunday"
-      time: "22:00"
-      timezone: "UTC"
+      interval: daily
     groups:
-      all-dependencies:
-        patterns:
-          - "*"
+      compatible-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
     commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
+      prefix: "ci(deps)"
+    open-pull-requests-limit: 10
