@@ -109,9 +109,9 @@ dependencies = [
 
 [[package]]
 name = "cargo-plugin-utils"
-version = "0.0.16"
+version = "0.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da171d14a1c96c01dc298b4fe07038c63624eac38b07cb027b6401787060776d"
+checksum = "24ed2604055faabccace8a395701dee06630335297c2ef1979b688892deeea22"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -120,7 +120,7 @@ dependencies = [
  "gix",
  "indicatif",
  "portable-pty",
- "rhusky 1.0.2",
+ "rhusky",
  "tokio",
 ]
 
@@ -132,7 +132,7 @@ dependencies = [
  "async-fs-io",
  "cargo-plugin-utils",
  "clap",
- "rhusky 2.0.1",
+ "rhusky",
  "serde",
  "tokio",
  "toml_edit",
@@ -1484,16 +1484,6 @@ name = "regex-automata"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
-
-[[package]]
-name = "rhusky"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3214d6aa073af2bdfe58d4d487f1c525ea7b00cab0ceb4183e9fb5b87aec514"
-dependencies = [
- "async-fs-io",
- "tokio",
-]
 
 [[package]]
 name = "rhusky"
