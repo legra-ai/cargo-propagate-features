@@ -31,9 +31,9 @@ dependencies = [
 
 [[package]]
 name = "async-fs-io"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e93ad633a3724b47ab1d4e39924c7157240cebb686e42fff70902ad57115f4"
+checksum = "e6ce680f375cdb1379a8956e532db06ccca7d458fb7e9c86b7c2c0a5df514bc7"
 dependencies = [
  "fs2",
  "thiserror 2.0.21",
@@ -250,9 +250,9 @@ checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
 
 [[package]]
 name = "crc32fast"
-version = "1.5.3"
+version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ba106e844045ddc02c20768ac4b0b7cb45f2cc2ecbd833ac9f5dacb183c2055"
+checksum = "5f97d3416d5337d15c4b0d78c8c91df922ca143f57ec20e2d1c188333047ef04"
 dependencies = [
  "cfg-if",
 ]
