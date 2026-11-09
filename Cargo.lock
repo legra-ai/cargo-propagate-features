@@ -109,9 +109,9 @@ dependencies = [
 
 [[package]]
 name = "cargo-plugin-utils"
-version = "0.0.23"
+version = "0.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e413da32b9fa0be4703f542c67a9da00caa96dc545d3a2ca1711f35dd2d09c4"
+checksum = "2bbb0796838aeb00afb4e165fd4bcd9ed8d914011e1e8e7e0f9ae81ed56e9c0b"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-propagate-features"
-version = "1.0.11"
+version = "1.0.12"
 dependencies = [
  "anyhow",
  "async-fs-io",
