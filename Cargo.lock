@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-propagate-features"
-version = "1.0.25"
+version = "1.0.26"
 dependencies = [
  "anyhow",
  "async-fs-io",
