@@ -109,9 +109,9 @@ dependencies = [
 
 [[package]]
 name = "cargo-plugin-utils"
-version = "0.0.34"
+version = "0.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f2f504795d1ab3d6ecb71e87029092eb6feabf1b27b606986e175ed4422012f"
+checksum = "dd679af2fca548ab6134fe3dd0483d6fe5d0b1557bddfe1cd069318f3fbf6817"
 dependencies = [
  "anyhow",
  "cargo_metadata",
